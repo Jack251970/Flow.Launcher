@@ -15,7 +15,6 @@ namespace Flow.Launcher.Storage
         [JsonInclude, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public Dictionary<string, int> records { get; private set; }
 
-
         public UserSelectedRecord()
         {
             recordsWithQuery = new Dictionary<int, int>();

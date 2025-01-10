@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Runtime;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Text.RegularExpressions;
 
 namespace Flow.Launcher.Plugin
 {
@@ -13,7 +13,6 @@ namespace Flow.Launcher.Plugin
     /// </summary>
     public class Result
     {
-
         private string _pluginDirectory;
 
         private string _icoPath;
@@ -272,6 +271,35 @@ namespace Flow.Launcher.Plugin
         /// Maximum score. This can be useful when set one result to the top by default. This is the score for the results set to the topmost by users.
         /// </summary>
         public const int MaxScore = int.MaxValue;
+
+        /// <summary>
+        /// The euqal regex that the title of the result used when checking if it is the topmost result or saving user selected records.
+        /// If it is null, the title will use default comparison of string.
+        /// 
+        /// It supports two types of regex patterns:
+        /// The first one is the entire string match like new Regex(@"^Workspace: Profile \w+,"),
+        /// and the second one is the group name match like new Regex(@"^Workspace: Profile (?&lt;profile&gt;\w+),").
+        /// 
+        /// They can make "Workspace: Profile Default, 4 tabs" and "Workspace: Profile Default, 5 tabs" be equal.
+        /// So, if your plugin changes the title of one result based on the current status,
+        /// the result is still the topmost result.
+        /// If user click either of them, the selected count will be added to 
+        /// </summary>
+        public Regex TitleEqualRegex { get; set; } = null;
+
+        /// <summary>
+        /// The euqal regex that the subtitle of the result used when checking if it is the topmost result or saving user selected records.
+        /// If it is null, the subtitle will use default comparison of string.
+        /// 
+        /// It supports two types of regex patterns:
+        /// The first one is the entire string match like new Regex(@"^Workspace: Profile \w+,"),
+        /// and the second one is the group name match like new Regex(@"^Workspace: Profile (?&lt;profile&gt;\w+),").
+        /// 
+        /// They can make "Workspace: Profile Default, 4 tabs" and "Workspace: Profile Default, 5 tabs" be equal.
+        /// So if your plugin changes the subtitle of one result based on the current status,
+        /// the result is still the topmost result.
+        /// </summary>
+        public Regex SubTitleEqualRegex { get; set; } = null;
 
         /// <summary>
         /// Info of the preview section of a <see cref="Result"/>

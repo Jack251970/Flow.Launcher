@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Flow.Launcher.Plugin;
 
 namespace Flow.Launcher.Storage
@@ -19,7 +20,7 @@ namespace Flow.Launcher.Storage
             }
 
             // since this dictionary should be very small (or empty) going over it should be pretty fast.
-            return value.Equals(result);
+            return value.Equals(result, result.TitleEqualRegex, result.SubTitleEqualRegex);
         }
 
         internal void Remove(Result result)
@@ -50,11 +51,73 @@ namespace Flow.Launcher.Storage
         public string SubTitle { get; set; }
         public string PluginID { get; set; }
 
-        public bool Equals(Result r)
+        public bool Equals(Result r, Regex titleMatchRegex = null, Regex subTitleMatchRegex = null)
         {
-            return Title == r.Title
-                && SubTitle == r.SubTitle
+            var titleEqual = titleMatchRegex == null ? Title == r.Title :
+                new AdvancedStringComparer(titleMatchRegex).Equal(Title, r.Title);
+            var subTitleEqual = subTitleMatchRegex == null ? SubTitle == r.SubTitle :
+                new AdvancedStringComparer(subTitleMatchRegex).Equal(SubTitle, r.SubTitle);
+            return titleEqual
+                && subTitleEqual
                 && PluginID == r.PluginID;
+        }
+
+        private class AdvancedStringComparer
+        {
+            private readonly Regex _regex;
+
+            public AdvancedStringComparer(Regex compareRegex)
+            {
+                _regex = compareRegex;
+            }
+
+            // Method to compare two strings
+            public bool Equal(string str1, string str2)
+            {
+                var match1 = _regex.Match(str1);
+                var match2 = _regex.Match(str2);
+
+                // Only if both strings match the regex, we compare the relevant parts
+                var matchSuccess = match1.Success && match2.Success;
+                if (matchSuccess)
+                {
+                    // Compare the matched parts of the strings
+                    var matchGroup1 = match1.Groups;
+                    var matchGroup2 = match2.Groups;
+
+                    // If the number of matched groups is different, the strings are not equal
+                    if (matchGroup1.Count != matchGroup2.Count)
+                    {
+                        return false;
+                    }
+
+                    // If user uses the entire match
+                    if (matchGroup1.Count == 1)
+                    {
+                        return matchGroup1[0].Value == matchGroup2[0].Value;
+                    }
+
+                    // If user uses the named groups,
+                    // Skip the first group which is the entire match
+                    for (var i = 1; i < matchGroup1.Count; i++)
+                    {
+                        // Compare the matched values
+                        var matchValue1 = matchGroup1[i].Value;
+                        var matchValue2 = matchGroup2[i].Value;
+                        if (matchValue1 != matchValue2)
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    // If one or both strings do not match the regex, we compare original strings as is
+                    return str1 == str2;
+                }
+            }
         }
     }
 }
