@@ -20,7 +20,6 @@
     Closing="OnClosing"
     Deactivated="OnDeactivated"
     Icon="Images/app.png"
-    SourceInitialized="OnSourceInitialized"
     Initialized="OnInitialized"
     Left="{Binding Settings.WindowLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
     Loaded="OnLoaded"
@@ -31,6 +30,7 @@
     ResizeMode="CanResize"
     ShowInTaskbar="False"
     SizeToContent="Height"
+    SourceInitialized="OnSourceInitialized"
     Topmost="True"
     Visibility="{Binding MainWindowVisibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
     WindowStartupLocation="Manual"
@@ -433,16 +433,18 @@
                             </ControlTemplate>
                         </GridSplitter.Template>
                     </GridSplitter>
+                    <!--  // TODO: Check Height == 0  -->
                     <Grid
                         x:Name="Preview"
                         Grid.Column="2"
+                        Height="380"
                         VerticalAlignment="Stretch"
                         Style="{DynamicResource PreviewArea}"
                         Visibility="{Binding InternalPreviewVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Border
                             MinHeight="380"
                             d:DataContext="{d:DesignInstance vm:ResultViewModel}"
-                            DataContext="{Binding SelectedItem, ElementName=ResultListBox}"
+                            DataContext="{Binding SelectedItem, Mode=OneWay}"
                             Visibility="{Binding ShowDefaultPreview}">
                             <Grid
                                 Margin="0 0 10 5"
@@ -472,7 +474,7 @@
                                         MaxHeight="320"
                                         Margin="0 16 0 0"
                                         HorizontalAlignment="Center"
-                                        Source="{Binding PreviewImage}"
+                                        Source="{Binding PreviewImage, Mode=OneWay}"
                                         StretchDirection="DownOnly"
                                         Visibility="{Binding ShowPreviewImage}">
                                         <Image.Style>
@@ -519,7 +521,7 @@
                             MaxHeight="{Binding ElementName=ResultListBox, Path=ActualHeight}"
                             Padding="0 0 10 10"
                             d:DataContext="{d:DesignInstance vm:ResultViewModel}"
-                            DataContext="{Binding SelectedItem, ElementName=ResultListBox}"
+                            DataContext="{Binding SelectedItem, Mode=OneWay}"
                             Visibility="{Binding ShowCustomizedPreview}">
                             <ContentControl Content="{Binding Result.PreviewPanel.Value}" />
                         </Border>

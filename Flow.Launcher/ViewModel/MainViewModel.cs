@@ -166,6 +166,20 @@ namespace Flow.Launcher.ViewModel
                 switch (args.PropertyName)
                 {
                     case nameof(Results.SelectedItem):
+                        _selectedItemFromQueryResults = true;
+                        SelectedItem = Results.SelectedItem;
+                        UpdatePreview();
+                        break;
+                }
+            };
+
+            History.PropertyChanged += (_, args) =>
+            {
+                switch (args.PropertyName)
+                {
+                    case nameof(History.SelectedItem):
+                        _selectedItemFromQueryResults = false;
+                        SelectedItem = History.SelectedItem;
                         UpdatePreview();
                         break;
                 }
@@ -639,7 +653,9 @@ namespace Flow.Launcher.ViewModel
             get { return _selectedResults; }
             set
             {
+                var isReturningFromQueryResults = SelectedIsFromQueryResults();
                 var isReturningFromContextMenu = ContextMenuSelected();
+                var isReturningFromHistory = HistorySelected();
                 _selectedResults = value;
                 if (SelectedIsFromQueryResults())
                 {
@@ -660,12 +676,41 @@ namespace Flow.Launcher.ViewModel
                     {
                         ChangeQueryText(_queryTextBeforeLeaveResults);
                     }
+
+                    // If we are returning from history and we have not set select item yet,
+                    // we need to clear the selected item for preview
+                    if (isReturningFromHistory && _selectedItemFromQueryResults.HasValue && (!_selectedItemFromQueryResults.Value))
+                    {
+                        SelectedItem = null;
+                    }
+                }
+                else if (HistorySelected())
+                {
+                    Results.Visibility = Visibility.Collapsed;
+                    ContextMenu.Visibility = Visibility.Collapsed;
+                    _queryTextBeforeLeaveResults = QueryText;
+
+                    if (string.IsNullOrEmpty(QueryText))
+                    {
+                        Query();
+                    }
+                    else
+                    {
+                        QueryText = string.Empty;
+                    }
+
+                    // If we are returning from query results and we have not set select item yet,
+                    // we need to clear the selected item for preview
+                    if (isReturningFromQueryResults && _selectedItemFromQueryResults.HasValue && _selectedItemFromQueryResults.Value)
+                    {
+                        SelectedItem = null;
+                    }
                 }
                 else
                 {
                     Results.Visibility = Visibility.Collapsed;
+                    History.Visibility = Visibility.Collapsed;
                     _queryTextBeforeLeaveResults = QueryText;
-
 
                     // Because of Fody's optimization
                     // setter won't be called when property value is not changed.
@@ -781,6 +826,20 @@ namespace Flow.Launcher.ViewModel
 
         #region Preview
 
+        private bool? _selectedItemFromQueryResults;
+
+        private ResultViewModel _selectedItem;
+
+        public ResultViewModel SelectedItem
+        {
+            get => _selectedItem;
+            set
+            {
+                _selectedItem = value;
+                OnPropertyChanged();
+            }
+        }
+
         public bool InternalPreviewVisible
         {
             get
@@ -891,7 +950,7 @@ namespace Flow.Launcher.ViewModel
         private void ShowInternalPreview()
         {
             ResultAreaColumn = ResultAreaColumnPreviewShown;
-            Results.SelectedItem?.LoadPreviewImage();
+            SelectedItem?.LoadPreviewImage();
         }
 
         private void HideInternalPreview()
@@ -946,7 +1005,7 @@ namespace Flow.Launcher.ViewModel
 
                 case false
                     when InternalPreviewVisible:
-                    Results.SelectedItem?.LoadPreviewImage();
+                    SelectedItem?.LoadPreviewImage();
                     break;
             }
         }

@@ -169,10 +169,15 @@ namespace Flow.Launcher.ViewModel
             private set => image = value;
         }
 
+        // TODO: Fix preview image load issue
         public ImageSource PreviewImage
         {
             get => previewImage;
-            private set => previewImage = value;
+            private set
+            {
+                previewImage = value;
+                OnPropertyChanged();
+            }
         }
 
         /// <summary>
