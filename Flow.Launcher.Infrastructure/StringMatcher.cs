@@ -61,7 +61,7 @@ namespace Flow.Launcher.Infrastructure
         /// 6. Move onto the next substring's characters until all substrings are checked.
         /// 7. Consider success and move onto scoring if every char or substring without whitespaces matched
         /// </summary>
-        public MatchResult FuzzyMatch(string query, string stringToCompare, MatchOption opt)
+        private MatchResult FuzzyMatch(string query, string stringToCompare, MatchOption opt)
         {
             if (string.IsNullOrEmpty(stringToCompare) || string.IsNullOrEmpty(query))
                 return new MatchResult(false, UserSettingSearchPrecision);
