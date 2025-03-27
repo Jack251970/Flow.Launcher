@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Media;
 using System.Threading.Tasks;
@@ -269,7 +268,6 @@ namespace Flow.Launcher
 
         private void OnLocationChanged(object sender, EventArgs e)
         {
-
             if (_settings.SearchWindowScreen == SearchWindowScreens.RememberLastLaunchLocation)
             {
                 _settings.WindowLeft = Left;
@@ -770,20 +768,16 @@ namespace Flow.Launcher
         public void WindowAnimation()
         {
             _isArrowKeyPressed = true;
+
             UpdatePosition(false);
-            if(_settings.UseAnimation)
-            {
-                    ClockPanel.Opacity = 0;
-                    SearchIcon.Opacity = 0;
-            }
-            else
-            {
-                ClockPanel.Opacity = 1;
-                SearchIcon.Opacity = 1;
-            }
+
+            var opacity = _settings.UseAnimation ? 0.0 : 1.0;
+            ClockPanel.Opacity = opacity;
+            SearchIcon.Opacity = opacity;
+
             var clocksb = new Storyboard();
             var iconsb = new Storyboard();
-            CircleEase easing = new CircleEase { EasingMode = EasingMode.EaseInOut };
+            var easing = new CircleEase { EasingMode = EasingMode.EaseInOut };
 
             var animationLength = _settings.AnimationSpeed switch
             {
@@ -811,7 +805,7 @@ namespace Flow.Launcher
                 FillBehavior = FillBehavior.HoldEnd
             };
 
-            double TargetIconOpacity = GetOpacityFromStyle(SearchIcon.Style, 1.0);
+            var TargetIconOpacity = GetOpacityFromStyle(SearchIcon.Style, 1.0);
 
             var IconOpacity = new DoubleAnimation
             {
@@ -822,7 +816,7 @@ namespace Flow.Launcher
                 FillBehavior = FillBehavior.HoldEnd
             };
             
-            double rightMargin = GetThicknessFromStyle(ClockPanel.Style, new Thickness(0, 0, DefaultRightMargin, 0)).Right;
+            var rightMargin = GetThicknessFromStyle(ClockPanel.Style, new Thickness(0, 0, DefaultRightMargin, 0)).Right;
 
             var thicknessAnimation = new ThicknessAnimation
             {
