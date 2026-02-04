@@ -59,36 +59,56 @@ namespace Flow.Launcher.Test
             var testPath = Path.Combine(Path.GetTempPath(), "FlowLauncherTest_" + Path.GetRandomFileName());
             var subDirPath = Path.Combine(testPath, "SubFolder");
             
-            Directory.CreateDirectory(testPath);
-            Directory.CreateDirectory(subDirPath);
+            try
+            {
+                Directory.CreateDirectory(testPath);
+                Directory.CreateDirectory(subDirPath);
 
-            // Create files with normal attributes
-            var normalFile = Path.Combine(testPath, "normal.txt");
-            File.WriteAllText(normalFile, "normal file");
+                // Create files with normal attributes
+                var normalFile = Path.Combine(testPath, "normal.txt");
+                File.WriteAllText(normalFile, "normal file");
 
-            // Create read-only file
-            var readOnlyFile = Path.Combine(testPath, "readonly.txt");
-            File.WriteAllText(readOnlyFile, "readonly file");
-            File.SetAttributes(readOnlyFile, FileAttributes.ReadOnly);
+                // Create read-only file
+                var readOnlyFile = Path.Combine(testPath, "readonly.txt");
+                File.WriteAllText(readOnlyFile, "readonly file");
+                File.SetAttributes(readOnlyFile, FileAttributes.ReadOnly);
 
-            // Create hidden file
-            var hiddenFile = Path.Combine(subDirPath, "hidden.txt");
-            File.WriteAllText(hiddenFile, "hidden file");
-            File.SetAttributes(hiddenFile, FileAttributes.Hidden);
+                // Create hidden file
+                var hiddenFile = Path.Combine(subDirPath, "hidden.txt");
+                File.WriteAllText(hiddenFile, "hidden file");
+                File.SetAttributes(hiddenFile, FileAttributes.Hidden);
 
-            // Verify setup
-            ClassicAssert.IsTrue(Directory.Exists(testPath));
-            ClassicAssert.IsTrue(Directory.Exists(subDirPath));
-            ClassicAssert.IsTrue(File.Exists(readOnlyFile));
-            ClassicAssert.IsTrue(File.Exists(hiddenFile));
+                // Verify setup
+                ClassicAssert.IsTrue(Directory.Exists(testPath));
+                ClassicAssert.IsTrue(Directory.Exists(subDirPath));
+                ClassicAssert.IsTrue(File.Exists(normalFile));
+                ClassicAssert.IsTrue(File.Exists(readOnlyFile));
+                ClassicAssert.IsTrue(File.Exists(hiddenFile));
 
-            // Act: Force delete the directory
-            FilesFolders.ForceDeleteDirectory(testPath);
+                // Act: Force delete the directory
+                FilesFolders.ForceDeleteDirectory(testPath);
 
-            // Assert: Verify directory and all contents are deleted
-            ClassicAssert.IsFalse(Directory.Exists(testPath), "Directory should be completely deleted");
-            ClassicAssert.IsFalse(File.Exists(readOnlyFile), "Read-only file should be deleted");
-            ClassicAssert.IsFalse(File.Exists(hiddenFile), "Hidden file should be deleted");
+                // Assert: Verify directory and all contents are deleted
+                ClassicAssert.IsFalse(Directory.Exists(testPath), "Directory should be completely deleted");
+                ClassicAssert.IsFalse(File.Exists(normalFile), "Normal file should be deleted");
+                ClassicAssert.IsFalse(File.Exists(readOnlyFile), "Read-only file should be deleted");
+                ClassicAssert.IsFalse(File.Exists(hiddenFile), "Hidden file should be deleted");
+            }
+            finally
+            {
+                // Cleanup: Ensure test directory is removed even if test fails
+                if (Directory.Exists(testPath))
+                {
+                    try
+                    {
+                        FilesFolders.ForceDeleteDirectory(testPath);
+                    }
+                    catch
+                    {
+                        // Ignore cleanup errors
+                    }
+                }
+            }
         }
 
         [Test]

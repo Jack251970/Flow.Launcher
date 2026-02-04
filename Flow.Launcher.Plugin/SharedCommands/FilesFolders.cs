@@ -164,11 +164,8 @@ namespace Flow.Launcher.Plugin.SharedCommands
             // Process all files in the directory
             foreach (var file in directoryInfo.GetFiles())
             {
-                // Clear read-only, hidden, and system attributes
-                if ((file.Attributes & (FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System)) != 0)
-                {
-                    file.Attributes = FileAttributes.Normal;
-                }
+                // Clear read-only, hidden, and system attributes while preserving others like Archive
+                file.Attributes &= ~(FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System);
             }
 
             // Recursively process subdirectories
