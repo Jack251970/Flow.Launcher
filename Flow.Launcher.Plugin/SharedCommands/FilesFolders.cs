@@ -131,6 +131,54 @@ namespace Flow.Launcher.Plugin.SharedCommands
         }
 
         /// <summary>
+        /// Recursively deletes a directory and all its contents, clearing file attributes first to ensure complete deletion.
+        /// This method handles read-only, hidden, and system files/folders that would otherwise prevent deletion.
+        /// </summary>
+        /// <param name="path">The directory path to delete</param>
+        public static void ForceDeleteDirectory(string path)
+        {
+            if (!Directory.Exists(path))
+                return;
+
+            // First, recursively clear attributes on all files and directories
+            var directoryInfo = new DirectoryInfo(path);
+            ClearAttributesRecursively(directoryInfo);
+
+            // Now delete the directory
+            Directory.Delete(path, true);
+        }
+
+        /// <summary>
+        /// Recursively clears all attributes (ReadOnly, Hidden, System) from files and directories
+        /// to ensure they can be deleted without issues.
+        /// </summary>
+        /// <param name="directoryInfo">The directory to process</param>
+        private static void ClearAttributesRecursively(DirectoryInfo directoryInfo)
+        {
+            // Clear attributes on the directory itself
+            if ((directoryInfo.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+            {
+                directoryInfo.Attributes &= ~FileAttributes.ReadOnly;
+            }
+
+            // Process all files in the directory
+            foreach (var file in directoryInfo.GetFiles())
+            {
+                // Clear read-only, hidden, and system attributes
+                if ((file.Attributes & (FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System)) != 0)
+                {
+                    file.Attributes = FileAttributes.Normal;
+                }
+            }
+
+            // Recursively process subdirectories
+            foreach (var subDirectory in directoryInfo.GetDirectories())
+            {
+                ClearAttributesRecursively(subDirectory);
+            }
+        }
+
+        /// <summary>
         /// Checks if a directory exists
         /// </summary>
         /// <param name="path"></param>

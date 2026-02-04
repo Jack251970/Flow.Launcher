@@ -6,6 +6,7 @@ using Flow.Launcher.Infrastructure;
 using Flow.Launcher.Plugin;
 using System.Text.Json;
 using Flow.Launcher.Infrastructure.UserSettings;
+using Flow.Launcher.Plugin.SharedCommands;
 
 namespace Flow.Launcher.Core.Plugin
 {
@@ -30,7 +31,7 @@ namespace Flow.Launcher.Core.Plugin
                 {
                     try
                     {
-                        Directory.Delete(directory, true);
+                        FilesFolders.ForceDeleteDirectory(directory);
                     }
                     catch (Exception e)
                     {
