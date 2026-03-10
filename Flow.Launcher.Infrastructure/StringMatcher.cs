@@ -205,6 +205,24 @@ namespace Flow.Launcher.Infrastructure
 
                 if (acronymScore >= (int)UserSettingSearchPrecision)
                 {
+                    // When the fuzzy match also completed, take the higher of the two scores.
+                    // This ensures that a query which also appears as a consecutive substring
+                    // (e.g. "at" in "ATLauncher") is not ranked lower than a string where the
+                    // same characters happen to appear scattered (e.g. "at" in "Kate").
+                    if (allQuerySubstringsMatched)
+                    {
+                        var nearestSpaceIndex = CalculateClosestSpaceIndex(spaceIndices, firstMatchIndex);
+                        var fuzzyScore = CalculateSearchScore(query, stringToCompare,
+                            firstMatchIndex - nearestSpaceIndex - 1, spaceIndices,
+                            lastMatchIndex - firstMatchIndex, allSubstringsContainedInCompareString);
+
+                        if (fuzzyScore > acronymScore)
+                        {
+                            var resultList = indexList.Select(x => translationMapping?.MapToOriginalIndex(x) ?? x).Distinct().ToList();
+                            return new MatchResult(true, UserSettingSearchPrecision, resultList, fuzzyScore);
+                        }
+                    }
+
                     acronymMatchData = acronymMatchData.Select(x => translationMapping?.MapToOriginalIndex(x) ?? x).Distinct().ToList();
                     return new MatchResult(true, UserSettingSearchPrecision, acronymMatchData, acronymScore);
                 }
@@ -254,7 +272,7 @@ namespace Flow.Launcher.Infrastructure
                char.IsWhiteSpace(stringToCompare[compareStringIndex - 1]);
 
         private static bool IsAcronymNumber(string stringToCompare, int compareStringIndex)
-            => stringToCompare[compareStringIndex] >= 0 && stringToCompare[compareStringIndex] <= 9;
+            => stringToCompare[compareStringIndex] >= '0' && stringToCompare[compareStringIndex] <= '9';
 
         // To get the index of the closest space which preceeds the first matching index
         private static int CalculateClosestSpaceIndex(List<int> spaceIndices, int firstMatchIndex)
@@ -328,15 +346,11 @@ namespace Flow.Launcher.Infrastructure
             if (firstIndex == 0 && allSubstringsContainedInCompareString)
                 score -= spaceIndices.Count;
 
-            // A match with less characters assigning more weights
-            if (stringToCompare.Length - query.Length < 5)
-            {
-                score += 20;
-            }
-            else if (stringToCompare.Length - query.Length < 10)
-            {
-                score += 10;
-            }
+            // Give more weight to shorter compare strings relative to the query.
+            // Using a proportion (query / compareString) means a query that nearly
+            // fills the result string scores more highly than one that is a tiny
+            // fragment of a long string, placing shorter, more-relevant results first.
+            score += (int)((double)query.Length * 20 / stringToCompare.Length);
 
             if (allSubstringsContainedInCompareString)
             {

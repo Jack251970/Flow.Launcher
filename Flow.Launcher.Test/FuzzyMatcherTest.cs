@@ -139,13 +139,13 @@ namespace Flow.Launcher.Test
         /// Usually the increase in scoring should not be drastic, increase of less than 10 is acceptable.
         /// </summary>
         [TestCase(Chrome, Chrome, 157)]
-        [TestCase(Chrome, LastIsChrome, 145)]
+        [TestCase(Chrome, LastIsChrome, 143)]
         [TestCase("chro", HelpCureHopeRaiseOnMindEntityChrome, 50)]
-        [TestCase("chr", HelpCureHopeRaiseOnMindEntityChrome, 30)]
-        [TestCase(Chrome, UninstallOrChangeProgramsOnYourComputer, 21)]
+        [TestCase("chr", HelpCureHopeRaiseOnMindEntityChrome, 31)]
+        [TestCase(Chrome, UninstallOrChangeProgramsOnYourComputer, 23)]
         [TestCase(Chrome, CandyCrushSagaFromKing, 0)]
-        [TestCase("sql", MicrosoftSqlServerManagementStudio, 109)]
-        [TestCase("sql  manag", MicrosoftSqlServerManagementStudio, 120)] //double spacing intended
+        [TestCase("sql", MicrosoftSqlServerManagementStudio, 110)]
+        [TestCase("sql  manag", MicrosoftSqlServerManagementStudio, 125)] //double spacing intended
         public void WhenGivenQueryString_ThenShouldReturn_TheDesiredScoring(
             string queryString, string compareString, int expectedScore)
         {
@@ -344,6 +344,52 @@ namespace Flow.Launcher.Test
                 $"Name of first: \"{firstName}\", Final Score: {firstScore}{Environment.NewLine}" +
                 $"Should be greater than{Environment.NewLine}" +
                 $"Name of second: \"{secondName}\", Final Score: {secondScore}{Environment.NewLine}");
+        }
+
+        /// <summary>
+        /// Issue #3195: A query that matches an acronym at the very start of a string (e.g. "at" in
+        /// "ATLauncher") should rank higher than a string where the same characters only appear as a
+        /// scattered subsequence (e.g. "at" in "Kate" where 'a' and 't' are in the middle of the word).
+        /// The fix takes max(acronym_score, fuzzy_score) so the consecutive start match wins.
+        /// </summary>
+        [TestCase("at", "ATLauncher", "Kate")]
+        [TestCase("gc", "Google Chrome", "logic")]
+        public void WhenQueryMatchesAtStartVsMiddle_ShouldRankStartHigher(
+            string queryString, string compareStringStart, string compareStringMiddle)
+        {
+            var matcher = new StringMatcher(alphabet) { UserSettingSearchPrecision = SearchPrecisionScore.Regular };
+
+            var startResult = matcher.FuzzyMatch(queryString, compareStringStart);
+            var middleResult = matcher.FuzzyMatch(queryString, compareStringMiddle);
+
+            ClassicAssert.True(startResult.Score > middleResult.Score,
+                $"Query: \"{queryString}\"{Environment.NewLine}" +
+                $"Start match \"{compareStringStart}\", Score: {startResult.Score}{Environment.NewLine}" +
+                $"Should be greater than{Environment.NewLine}" +
+                $"Middle match \"{compareStringMiddle}\", Score: {middleResult.Score}{Environment.NewLine}");
+        }
+
+        /// <summary>
+        /// Issue #3227: For the same query, a shorter result string (where the query covers a larger
+        /// fraction of the string) should score higher than a longer result string.
+        /// This ensures "VLC" ranks above "VLC media player" when searching "vlc".
+        /// </summary>
+        [TestCase("vlc", "VLC", "VLC media player")]
+        [TestCase("vlc", "VLC media player", "VLC media player settings")]
+        [TestCase("py", "Python", "Python Programming Language")]
+        public void WhenQueryCoversMoreOfString_ShouldScoreHigher(
+            string queryString, string shorterString, string longerString)
+        {
+            var matcher = new StringMatcher(alphabet) { UserSettingSearchPrecision = SearchPrecisionScore.Regular };
+
+            var shorterResult = matcher.FuzzyMatch(queryString, shorterString);
+            var longerResult = matcher.FuzzyMatch(queryString, longerString);
+
+            ClassicAssert.True(shorterResult.Score > longerResult.Score,
+                $"Query: \"{queryString}\"{Environment.NewLine}" +
+                $"Shorter \"{shorterString}\", Score: {shorterResult.Score}{Environment.NewLine}" +
+                $"Should be greater than{Environment.NewLine}" +
+                $"Longer \"{longerString}\", Score: {longerResult.Score}{Environment.NewLine}");
         }
 
         [TestCase("vsc", "Visual Studio Code", 100)]
